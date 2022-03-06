@@ -1,6 +1,7 @@
 from .dataset import Dataset
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
+import pandas as pd
 
 
 class TabularDataset(Dataset):
@@ -20,6 +21,9 @@ class TabularDataset(Dataset):
         self.data = table
         self.types = types
 
+        self.numeric_features = None
+        self.categorical_features = None
+
         self.train = None
         self.dev = None
         self.test = None
@@ -27,6 +31,7 @@ class TabularDataset(Dataset):
         self.train_target = None
         self.dev_target = None
         self.test_target = None
+        self.target_type = None
 
     def set_target(self, name):
         """Extracts one column from the data table and sets it as target.
@@ -44,6 +49,20 @@ class TabularDataset(Dataset):
         self.train_target = self.train.pop(name)
         self.dev_target = self.dev.pop(name)
         self.test_target = self.test.pop(name)
+
+        # Get type from the target.
+        # This will be either int or 'cat' for classification
+        # or float for regression problems.
+        self.target_type = self.types[name]
+
+        # Initialize the type of the features.
+        self.numeric_features = list()
+        self.categorical_features = list()
+        for feat in self.train.columns:
+            if (self.types[feat] == int) or (self.types[feat] == float):
+                self.numeric_features.append(feat)
+            elif self.types[feat] == 'cat':
+                self.categorical_features.append(feat)
     
     def train_dev_test_split(self, train_frac=.8):
         """Splits the data table in train, dev and test.
@@ -63,15 +82,35 @@ class TabularDataset(Dataset):
         self.dev = dev
         self.test = test
     
+    @staticmethod
+    def __transform_subspace(df, func, features_to_transform):
+        trans_df = df[features_to_transform].copy()
+
+        fix_features = [f for f in df.columns if f not in features_to_transform]
+        fix_df = df[fix_features].copy()
+
+        trans_df = pd.DataFrame(data=func(trans_df), columns=trans_df.columns)
+
+        return pd.concat([trans_df, fix_df], axis=1)
+
     def rescale(self, scaler):
         if (self.train_target is None) or (self.test_target is None) or (self.dev_target is None):
             raise ValueError("Target not yet initialized.")
 
-        fitted_scaler = scaler.fit(self.train)
+        fitted_scaler = scaler.fit(self.train[self.numeric_features])
 
-        self.train = fitted_scaler.transform(self.train)
-        self.dev = fitted_scaler.transform(self.dev)
-        self.test = fitted_scaler.transform(self.test)
+        # self.train = fitted_scaler.transform(self.train)
+        # self.dev = fitted_scaler.transform(self.dev)
+        # self.test = fitted_scaler.transform(self.test)
+
+        def rescale_num_dataset(df):
+            return self.__transform_subspace(df=df,
+                                             func=scaler.transform,
+                                             features_to_transform=self.numeric_features)
+
+        self.train = rescale_num_dataset(self.train)
+        self.dev = rescale_num_dataset(self.dev)
+        self.test = rescale_num_dataset(self.test)
     
     def min_max_scaling(self):
         scaler = MinMaxScaler()
