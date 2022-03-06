@@ -17,3 +17,8 @@ class TabularDataset(Dataset):
 
         self.data = table
         self.types = types
+        self.target = None
+
+    def set_target(self, name):
+        self.target = self.data.pop(name)
+ 

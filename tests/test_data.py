@@ -12,5 +12,6 @@ def test_data():
     for c in col_names:
         types[c] = float
 
+    td = TabularDataset(table=data.frame, types=types)
 
-    td = TabularDataset(data=data.frame, types=types)
+    td.set_target(name='target')
