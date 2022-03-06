@@ -15,3 +15,7 @@ def test_data():
     td = TabularDataset(table=data.frame, types=types)
 
     td.set_target(name='target')
+
+    data = load_wine(as_frame=True)
+
+    td = TabularDataset(table=data.frame, types=types, target_name='target')
