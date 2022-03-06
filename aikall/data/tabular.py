@@ -1,5 +1,6 @@
 from .dataset import Dataset
 import numpy as np
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 
 class TabularDataset(Dataset):
@@ -61,3 +62,21 @@ class TabularDataset(Dataset):
         self.train = train
         self.dev = dev
         self.test = test
+    
+    def rescale(self, scaler):
+        if (self.train_target is None) or (self.test_target is None) or (self.dev_target is None):
+            raise ValueError("Target not yet initialized.")
+
+        fitted_scaler = scaler.fit(self.train)
+
+        self.train = fitted_scaler.transform(self.train)
+        self.dev = fitted_scaler.transform(self.dev)
+        self.test = fitted_scaler.transform(self.test)
+    
+    def min_max_scaling(self):
+        scaler = MinMaxScaler()
+        self.rescale(scaler=scaler)
+    
+    def standard_scaling(self):
+        scaler = StandardScaler()
+        self.rescale(scaler=scaler)
