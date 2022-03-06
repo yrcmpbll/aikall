@@ -14,8 +14,34 @@ def test_data():
 
     td = TabularDataset(table=data.frame, types=types)
 
-    td.set_target(name='target')
+    assert td
 
+
+def test_split():
     data = load_wine(as_frame=True)
 
-    td = TabularDataset(table=data.frame, types=types, target_name='target')
+    col_names = data.frame.columns
+
+    types = dict()
+    for c in col_names:
+        types[c] = float
+
+    td = TabularDataset(table=data.frame, types=types)
+
+    td.train_dev_test_split()
+
+
+def test_set_target():
+    data = load_wine(as_frame=True)
+
+    col_names = data.frame.columns
+
+    types = dict()
+    for c in col_names:
+        types[c] = float
+
+    td = TabularDataset(table=data.frame, types=types)
+
+    td.train_dev_test_split()
+
+    td.set_target(name='target')
